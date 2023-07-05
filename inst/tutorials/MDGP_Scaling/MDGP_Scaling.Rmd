@@ -90,7 +90,7 @@ terraOptions()
 ```
 
 
-**Verify where the working directory has been set to. this location will change in every run of every chunk. Therefore we will set our working directory explicitly in every chunk where we need to read data for subsequent exercises.**
+**Check the working directory. This location will change in every time you run the chunk -- check it. Therefore, we will have to set our working directory explicitly in every chunk where we need to write data for subsequent exercises.**
 \t
 
 ## Spatial Scale and Scaling 

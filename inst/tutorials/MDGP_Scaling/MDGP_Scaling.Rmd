@@ -72,7 +72,7 @@ library(caret)
 
 The package {landscapeScaling} provides the methods and functions to upscale categorical raster data using the Multi-Dimensional Grid-Point scaling method by @Gann_2019. The method generates a new classification scheme on the basis of user desired class label precision of mixed classes and representativeness of the scaled classes across the landscape of interest. 
 
-The scaling output includes scaled categorical raster maps with mixed classes, a corresponding continuous raster with compositional information retention calculations for each scaled grid cell, class-specific and at the landscape-level mean and standard deviation of information retention.
+The scaling procedure creates scaled categorical raster maps with mixed classes, a corresponding continuous raster with compositional information retention calculations for each scaled grid cell, class-specific and landscape-level mean and standard deviation of information retention.
 
 The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with devtools:
 
@@ -90,33 +90,38 @@ terraOptions()
 ```
 
 
-**Check the working directory. This location will change in every time you run the chunk -- check it. Therefore, we will have to set our working directory explicitly in every chunk where we need to write data for subsequent exercises.**
-\t
+**Check the working directory. This location will change every time you run the chunk -- try it. Therefore, we will have to set our working directory explicitly in every chunk where write data for subsequent exercises, and when we read the data.**
 
 ## Spatial Scale and Scaling 
 
 Scale is a **property of the observer of a system** and is defined by **extent** and **grain** at which the system is **sampled** (the sampling rate). **Every model** includes scaling procedures and makes **assumptions**.
 
-When we observe a system at different spatial scales and hierarchical levels different patterns emerge. Temporal analysis of system state changes rely on the tractability of spatial patterns so that they compare across space and time. Often the scales of data sources vary over time and comparability is lost. With the vast expansion of ever increasing spatial and temporal resolution of remotely sensed data, the need for good scaling practices is increasing.
+When we observe a system at different spatial scales and hierarchical levels different patterns emerge. Temporal analysis of system state changes rely on the tractability of spatial patterns so that they compare across space and time. Spatial scales of data vary over time and comparability is lost. With the ever increasing spatial and temporal resolution of remotely sensed data, the need for good scaling practices is increasing.
 
 ### Why Do We Need Spatial Scaling? 
 
-To be able to apply models that are informed by small-scale data at larger scales (larger extent and/or grain size) data samples (point or spatially exhaustive data) are summarized or aggregated. 
+To apply models that are informed by small-scale data at larger scales (larger extent and/or grain size) data samples (point or spatially exhaustive data) are scaled or aggregated. 
 
-Many ecological models rely on information patterns of distribution and dynamics of *primary producers* (i.e specie or functional types of vegetation). Three examples that demonstrate the importance of scale appropriate information scaling of vegetation information for ecological process models. 
+Many ecological models rely on information patterns of distribution and dynamics of *primary producers* (i.e plant species, communities, or morphological or functional types of vegetation). Three examples that demonstrate the importance of appropriate scaling of vegetation information for ecological models. 
 
-#### Earth System Models 
-Estimating biophysical variables from remotely sensed data. Difficulties produced by spatial heterogeneity on the reliable estimation of biophysical variables using remotely sensed data have been identified and described for a suite of parameters and applications (Lu 2006). 
+#### Earth System Models
+Earth system models (ESM) rely on remote sensing-derived products at various scales. Scaling methods have been developed to extrapolate primary productivity from the leaf and plant community scales to retrieve ecosystem, regional, and biome estimates of primary productivity @Sellers_1985, @Tucker_Sellers_1986, @Field_1991. 
+
+The relationship between gross primary productivity (GPP) and photosynthetically available radiation (PAR) in the photosynthetically active wavelengths is a function of the amount of photosynthetically active biomass, which can be approximated by leaf area, the incident radiation intercepted by the active biomass, and the photosynthetic efficiency with which the fraction of absorbed PAR (fPAR) is converted into biomass. The two important biophysical variables, leaf area and fPAR, can be retrieved from spectral reflectance measurements of remotely sensed imagery. 
+
+The most commonly used vegetation index to estimate fPAR is the normalized difference vegetation index (NDVI) @Baret_2007, @Ganguly_2008, @Cristiano_2010, @Du_2016. The MOD17 algorithm, for instance, relies on data from the Moderate Resolution Imaging Spectroradiometer (MODIS) @Running_1999, @Running_Zhao_2015 to estimate fPAR from NDVI @Knyazikhin_1999. Errors in retrieval of fPAR will lead to erroneous estimations of GPP. With the proliferation of spaceborne earth pversing satellites at various spatial resolutions, the retrieval of fPAR using vegetation indices has led to the investigation of spectral @Du_2016, @Brede_2020 and spatial scale dependencies @Propastin_2009 and the uncertainties introduced by the retrieval algorithms @Brede_2020, @Pu_2020. Spatial and spectral scale dependencies can be modeled if remotely-sensed data of different sensors can be cross-calibrated and products are comparable across spatial scales. As a result, spatial relationships can be translated to moderate-resolution imagery, acquired at higher temporal resolutions, to account for seasonal variability in productivity rates.
+
+Estimation of biophysical variables using remotely sensed data have been identified and described for a suite of parameters and applications @Lu_2006. Spatial heterogeneity of land cover complicates retrieval and introduces error and uncertainty.
 
 Leaf Area Index (LAI), which estimates green leaf area per unit ground, and Fraction of Photosynthetically Active Radiation (FPAR) are two important biophysical variables in ecosystem gross primary productivity (GPP) models.
 
-Estimation of these variables from Moderate Resolution Imaging Spectroradiometer (MODIS), which has high temporal resolution (daily) but coarse spatial resolution (500 m), relies on land-cover knowledge of each pixel (Steltzer and Welker 2006; Zhao et al. 2016).
+Estimation of these variables from Moderate Resolution Imaging Spectroradiometer (MODIS), which has high temporal resolution (daily) but coarse spatial resolution (500 m), relies on land-cover knowledge of each pixel @Steltzer_Welker_2006; @Zhao_2016.
 
-Modeling GPP for wetlands that display high heterogeneity of land cover relative to the coarse resolution of MODIS is difficult (Feagin et al. 2020).
+Modeling GPP for wetlands that display high heterogeneity of land cover relative to the coarse resolution of MODIS is difficult @Feagin_2020.
 
-LAI and FPAR are sensitive to land-cover information (Lotsch et al. 2003), and the heterogeneity of vegetation types within a pixel affects LAI estimates in a nonlinear fashion (Garrigues et al. 2006).
+LAI and FPAR are sensitive to land-cover information @Lotsch_2003, and the heterogeneity of vegetation types within a pixel affects LAI estimates in a nonlinear fashion @Garrigues_2006.
 
-LAI errors at a coarse resolution are inversely related to the proportion of the dominant land cover in a pixel and large errors are introduced when the woody component makes up only a small proportion of otherwise non-woody pixels (Tian et al. 2002).
+LAI errors at a coarse resolution are inversely related to the proportion of the dominant land cover in a pixel and large errors are introduced when the woody component makes up only a small proportion of otherwise non-woody pixels @Tian_2002.
 
 Therefore, maintaining sub-components at smaller fractions is useful for modeling LAI.
  
@@ -279,12 +284,12 @@ When you understand the effect of all parameters on the landscape pattern and th
 - Calculate cell-level and landscape level information retention.
 
 ```{r problem-1-landscapes, exercise=TRUE, exercise.lines=40, eval=FALSE, fig.show='hide'}
-## generate the landscape with 81 grid cells and 3 classes wirh r = 0.01 or 0.95
+## generate the landscape with 81 grid cells and 3 classes with r = 0.01 or 0.95
 
-# landscape characteristics
+# landscape characteristic
 n <- 
 c <- 
-r <- 0.01
+r <- 
 
 # scaling parameters
 sf <- 3
@@ -318,7 +323,7 @@ x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
                   plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
 terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 
-print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!', col='red')
+print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!')
 ```
 
 After each run, transfer the proportional cover of each class to the "nlm_r.[xx]_cls.prp". 
@@ -350,7 +355,7 @@ names(nlm_r.95_scl3.prp) <- c('class_s_3','prp')
 Calculate the cell-specific information retention for both landscapes using the Czekanowski Index and add the numbers for each of the nine grid cells of each landscape to the vectors 'nlm1_ir' and 'nlm1_ir' in the next R chunk. Once both vectors are complete run the chunk to calculate mean IR for each landscape. $$IR_{c} = \sum_{i-1}^{N} min(P_{i}smp, P_{i}scaled)$$ 
 $IR_{c}$ is the compositional information retention; $P_{i}smp$ is the proportion of class $i$ of the high-resolution grid within the scaled grid cell, and $P_{i}scaled$ is the proportion of class $i$ retained in the scaled grid cell label.
 
-```{r, nlm-ir, exercise=TRUE}
+```{r, nlm-ir, eval=FALSE, exercise=TRUE}
 # calculate IRc for each of the 9 scaled grid cells for both landscapes and add the values to the respective vectors, replacing x with the IRc values.
 nlmr_r.01_scl3.ir <- c(x,x,x,x,x,x,x,x,x)
 nlmr_r.95_scl3.ir <- c(x,x,x,x,x,x,x,x,x)
@@ -362,9 +367,9 @@ print(nlmr_r.95_scl3.ir_mn <- mean(nlmr_r.95_scl3.ir))
 
 **Questions Ex. 1**
 
-**What effect did heterogeneity of the landscape have on class percentage differences and compositional IR when scaling at a scale factor of 3?**   
+**What effect did heterogeneity of the landscape have on landscape level class percentage differences and compositional IR when scaling at a scale factor of 3?**
 
-```{r, questions-1-response, exercise=TRUE}
+```{r, questions-1-1-response, eval=FALSE, exercise=TRUE}
 print('Answer: ')
 ```
 ----
@@ -382,15 +387,17 @@ The MDGP-Scaling Algorithm has been developed to allow for more precise data agg
 
 ### Phytosociology Concept of Classification
 
-Classification of plant communities on the basis of quantitative data and analytical methods is common in vegetation ecology. Quantitative methods for vegetation classification go back to Braun Blanquet (citation) More recent methods and ... are covered in O. Wildi (), DeCaseres (), .... 
+Classification of plant communities on the basis of quantitative data and analytical methods is common in vegetation ecology and phytosociology. Quantitative methods for vegetation classification go back to Braun Blanquet (citation) More recent methods and ... are covered in O. Wildi (), DeCaseres (), Tichy () .... 
 
 Criteria of a good classification system:
 
-* representative -- ? 
-* reproducible -- ?
-* general (manageable) -- ?
+* representative (three aspects)
+* reproducible
 
-Sampling methods that consider sampling design to assure **representativeness** of the classification across the landscape are necessary.
+What do each of these terms mean?
+```{r, questions-1-2-response, eval=FALSE, exercise=TRUE}
+print('Answer: ')
+```
 
 \t
 \newpage
@@ -439,7 +446,7 @@ For each precision level, the scaled cell assigned to the grid point that maximi
 
 #### Scaling Entire Landscapes
 
-Scaling entire landscapes using MDGP-Scaling generates frequency distributions of mixed classes that depend on:
+Scaling entire landscapes using MDGP-Scaling generates frequency distributions of mixed classes. Number of classes and definitions depend on:
 
 * landscape properties (richness, diversity, and spatial aggregation)
 * scaling parameters (scale factor, label precision, and representativeness)
@@ -472,7 +479,7 @@ We will first generate the landscape that will then be scaled with scale factors
 
 ```{r, nlm-map, exercise=TRUE, exercise.lines=36, eval=FALSE, fig.show='hide', warning=FALSE}
 # set your working directory
-#setwd('')
+setwd('')
 
 # landscape characteristics
 n <- 31   # number of rows and columns
@@ -502,10 +509,10 @@ x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
             pax=list(cex.axis = 1 ))
 
 # write the landscape to file so it can be used in the next exercise (not in memory!)
-terra::writeRaster(nlm_cat,paste0('./data/nlm_',n-1,'.tif'),overwrite=TRUE)
+terra::writeRaster(nlm_cat,paste0('./nlm_',n-1,'.tif'),overwrite=TRUE)
 ```
 
-The landscape was written to the "./data" folder as a ".tif" file. It will be loaded in all subsequent chunks.
+The landscape was written to the wroking directory folder as a ".tif" file. It will be loaded in all subsequent chunks.
 
 ----
 
@@ -525,10 +532,10 @@ For each scaled grid cell, the function returns the original class abundances, t
 
 ```{r, nlm-classify, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
+setwd('')
 
 # read the landscape
-map <- terra::rast('./data/nlm_[X].tif')   # replace X wit the resolution of the map to be used
+map <- terra::rast('./nlm_[X].tif')   # replace X wit the resolution of the map to be used
 classField <- 'lc'
 
 # set the precision parameter parts
@@ -552,7 +559,7 @@ write.csv(rel_abund,file=paste0('./data/',prfx,'_sf',sf,'_rel_abund.csv'))
 mdgp_result <- landscapeScaling::mdgp_scale(rel_abund,parts=prts,rpr_threshold=0,monotypic_threshold=100)
 
 # write the scaled data frame to .rds file
-saveRDS(mdgp_result,file=paste0('./data/',prfx,'_sf',sf,'_prts',prts,'.rds'))
+saveRDS(mdgp_result,file=paste0('./',prfx,'_sf',sf,'_prts',prts,'.rds'))
 ```
 
 ----
@@ -573,10 +580,10 @@ The function to convert scaling results to raster is 'scaling_result_to_raster'.
 
 ```{r, nlm3-mdgp-to-raster, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
+setwd('')
 
 # read the scaling results object
-mdgp_result <- readRDS('./data/X.rds') # replace X.rds with the name of the scaling results file
+mdgp_result <- readRDS('./X.rds') # replace X.rds with the name of the scaling results file
 
 # set the precision parameter parts
 prts <- 1
@@ -627,10 +634,10 @@ Explore different combinations of settings.
 
 ```{r, nlm3-mdgp-explore, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
+setwd('')
 
 # read relative abundance table from file
-rel_abund <- read.csv('./data/X.csv')
+rel_abund <- read.csv('./X.csv')
 
 # set parts between 2 and 5 corresponding to 50% up to 20% class label proportion (precision)
 prts <- 2
@@ -705,24 +712,17 @@ The study area was mapped from 2010 and 2013 WorldView 2 (WV2) bi-seasonal data 
 
 The plant communities that were mapped from WV 2 are: 
 ```{r, load-pc-lut, eval=FALSE, include=TRUE}
-setwd(wd)
-print(read.csv('./data_raw/plant_communities_13_classes_LUT.csv'))
+print(read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_13_classes_LUT.csv')))
 ```
 The original classes were reclassified to simplify the classification scheme for this exercise. The reclassified map has five classes that are reclassified according to the reclass table.
 
 ```{r, load-rcl-lut, eval=FALSE, include=TRUE}
-# set working directory
-setwd(wd)
-
 print('The classes are reclassfied to: ')
-print(read.csv('./data_raw/plant_communities_RCL.csv'))
+print(read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_RCL.csv')))
 
 print('The reclassified map LUT: ')
-print(read.csv('./data_raw/plant_communities_5_classes_LUT.csv'))
+print(read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_5_classes_LUT.csv')))
 ```
-----
-
-MAYBE: Load and print the map with leaflet.
 
 ----
 
@@ -733,20 +733,20 @@ MAYBE: Load and print the map with leaflet.
 setwd(wd)
 
 # load map 
-veg_map <- terra::rast('./data_raw/plant_communities_wv2.tif')
-lut13 <- read.csv('./data_raw/plant_communities_13_classes_LUT.csv')
+veg_map <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_wv2.tif'))
+lut13 <- read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_13_classes_LUT.csv'))
 levels(veg_map) <- lut13
 print(veg_map)
 
 # load the reclassification table
-rcl <- read.csv('./data_raw/plant_communities_RCL.csv')
+rcl <- read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_RCL.csv'))
 
 # reclassify the map
 veg_map_rcl <- terra::classify(veg_map,rcl[,c(1,3)])
-lut5 <- read.csv('./data_raw/plant_communities_5_classes_LUT.csv')
+lut5 <- read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_5_classes_LUT.csv'))
 levels(veg_map_rcl) <- lut5
 
-terra::writeRaster(veg_map_rcl,'./data_raw/plant_communities_5_classes.tif',overwrite=TRUE)
+terra::writeRaster(veg_map_rcl,paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_5_classes.tif'),overwrite=TRUE)
 x11();terra::plot(veg_map_rcl)
 ```
 ----
@@ -770,10 +770,10 @@ Generate the relative abundance of classes with scale factor 15. The relative ab
 
 ```{r, sf-rel-abund, exercise=TRUE, exercise.lines=25, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
+setwd('')
 
 # load map 
-veg_map <- terra::rast('./data_raw/plant_communities_5_classes.tif')
+veg_map <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_5_classes.tif'))
 classField <- 'class'
 
 # subset the map to an area that captures the overall pattern of the landscape
@@ -788,7 +788,7 @@ sf <- 15
 system.time(rel_abund <- landscapeScaling::relative_abundance_scaled_grid(veg_map,class_field=classField,scale_factor=sf))
 
 # write relative abundance to .csv file
-write.csv(rel_abund,file=paste0('./data/pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
+write.csv(rel_abund,file=paste0('./pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
 ```
 
 ----
@@ -814,10 +814,10 @@ representativeness: 0, 1, 5, 10, 20
 ## representativeness: 0, 1, 5, 10, 20
 # --------
 # set working directory
-setwd(wd)
+setwd('')
 
 # load relative abundance
-rel_abund <- read.csv('./data/pc5_sf15_rel_abund.csv')
+rel_abund <- read.csv('./pc5_sf15_rel_abund.csv')
 print(head(rel_abund))
 
 # set output prefix
@@ -837,7 +837,7 @@ mdgp_result <- landscapeScaling::mdgp_scale(x=rel_abund,parts=prts,rpr_threshold
 print(mdgp_result)
 
 # write the scaled data frame to .rds file
-saveRDS(mdgp_result,file=paste0('./data/',prfx,'prts',prts,'_rpr',rpr,'_mono',mono,'.rds'))
+saveRDS(mdgp_result,file=paste0('./',prfx,'prts',prts,'_rpr',rpr,'_mono',mono,'.rds'))
 # -----------------------------------------------
 # convert classified points and location-specific information retention to raster
 mdgp_raster <- landscapeScaling::scaling_result_to_raster(scaling_result=mdgp_result,class_name_field='class_name',scale_factor=sf)
@@ -858,7 +858,7 @@ x11();terra::plot(mdgp_raster[[2]],col=gray.colors(20,start=0.1,end=1),mar=c(1.5
 print(mdgp_raster[[3]])
 
 # write scaled results to .tif
-terra::writeRaster(mdgp_raster[[1]],file=paste0('./data/',prfx,'prts',prts,'_rpr',rpr,'_mono',mono,'_class.tif'))
+terra::writeRaster(mdgp_raster[[1]],file=paste0('./',prfx,'prts',prts,'_rpr',rpr,'_mono',mono,'_class.tif'))
 ```
 
 ---
@@ -904,21 +904,13 @@ Explore the spectral data: We will load the subset Landsat scene and plot 2 band
 
 ```{r, ls-inspect, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
+setwd('')
 
 # load spectral Landsat data
-ls <- terra::rast('./data_raw/L5TM_20111110_atmcor_sub.tif')
+ls <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/L5TM_20111110_atmcor_sub.tif'))
 
 # plot RGB of band combination 5,4,3.
 x11();terra::plotRGB(ls, 5, 4, 3, stretch="hist")
-```
-
-**Questions**
-
-**How did increased precision of class-labels affect the detection accuracy from Landsat data?**
-**What are the trade-offs?**
-```{r, questions-5-1-response, exercise=TRUE}
-print('Answers: ')
 ```
 
 ---
@@ -936,10 +928,10 @@ The parameters that need to be set for the random forest calssifier training
 
 ```{r, sig-eval, exercise=TRUE, eval=FALSE}
 # set working directory
-setwd(wd)
+setwd('')
 
 # load sourced function
-source('./functions/partial_credit_weighted_accuracy.R')
+source(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/functions/partial_credit_weighted_accuracy.R')
 
 # landsat image
 ls_nme <- 'L5TM_20111110_atmcor_sub.tif'
@@ -967,10 +959,10 @@ nrow(gridTune)
 # ========== DO NOT MODIFY BEYOND THIS LINE ==========
 
 # load spectral Landsat data
-spc.rst <- terra::rast(paste0('./data_raw/',ls_nme))
+spc.rst <- terra::rast(paste0('R.home(),/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/,ls_nme'))
 
 # load scaled map and convert to vector
-map_class <- terra::rast(paste0('./data/',map_nme))
+map_class <- terra::rast(paste0('./',map_nme))
 map.pnt <- terra::as.points(map_class, na.rm=TRUE)
 
 # extract signature and join to class info
@@ -990,8 +982,8 @@ print(mdlFit)
 mtxCnf.cv <- confusionMatrix(prdCV$pred,prdCV$obs)
 
 # write class-specific evaluation and confusion matrix to file
-write.table(mtxCnf.cv$byClass,paste0('.data/',prfx,'_mtxCnf_stats.csv'))
-write.table(mtxCnf.cv$table,paste0('.data/',prfx,'_mtxCnf.csv'))
+write.table(mtxCnf.cv$byClass,paste0('./',prfx,'_mtxCnf_stats.csv'))
+write.table(mtxCnf.cv$table,paste0('./',prfx,'_mtxCnf.csv'))
 # -----------------------------------------------
 
 # MODEL-BASED CROSS-VALIDATED PARTIAL-CREDIT WEIGHTED ACCURACY ESTIMATES
@@ -1020,47 +1012,24 @@ oaCV_wght_CIU <- round((wghtAcc$sum.naive+ciAlpha),4)
 
 ```{r, spec-eval, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
-setwd(wd)
-
-# load spectral Landsat data
-spc.dat <- terra::rast('./data_raw/L5TM_20111110_atmcor_sub.tif')
+setwd('')
 
 # load scaled map and associated information retention layer
-map_scl <- terra::rast('./data/[SCALED_MAP_NAME].tif')
+map_scl <- terra::rast('./[SCALED_MAP_NAME].tif')
 
-# load information retention raster and clacualte mean
-map_infRtn <- raster(irC)
+# load information retention raster and calculate landscape level mean
+map_infRtn <- terra::rast('./[SCALED_MAP_IRC_NAME].tif')
 print(infRtnRL <- cellStats(map_infRtn, 'mean'))
-
-
-names(map_scl) <- 'cls'
-values(map_scl)[values(map_scl) == 0] = NA
-map.pnt <- rasterToPoints(map_scl, spatial=T)
-
-# join attribute data - class labels
-map.pnt <- merge(map.pnt,map_scl@data@attributes[[1]],by.x='cls',by.y='ID')	
-
-# extract signature and join to class info
-trnDat <- as.data.frame(terra::extract(spc.rst, map.pnt, sp=TRUE))
-head(trnDat)
-
-# number or classes in realized landscape grid 
-clsNumRL <- length(unique(trnDat$category))
-
-
-#------------------------------------------------
-
-# EVALUATE SIGNATURE -- CROSS-VALIDATED RANDOM FOREST MODEL
-
-mdlFit <- caret:::train(trnDat[,3:(nlayers(spc.rst)+2)],as.character(trnDat$category),trControl = trCtrl, metric='Accuracy', method='rf', tuneGrid=gridTune, ntree=nTree, importance=TRUE) #, trControl = trCtrl, metric=mtr, method=clfMeth, tuneGrid=gridTune, ntree=numTrees, importance=TRUE))
-#print(mdlFit)
 ```
+
+Repeat the exercise for the other scaling results (precision and representativness threshold combinations) 
 
 ---
 
 **Questions**
 
 **How did increased precision of class-labels affect the detection accuracy from Landsat data?**
+**How did increased representativeness affect the detection accuracy from Landsat data?**
 **What are the trade-offs?**
 ```{r, questions-5-2-response, exercise=TRUE}
 print('Answers: ')

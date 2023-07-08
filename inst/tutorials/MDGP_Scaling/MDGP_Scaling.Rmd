@@ -102,40 +102,29 @@ When we observe a system at different spatial scales and hierarchical levels dif
 
 To apply models that are informed by small-scale data at larger scales (larger extent and/or grain size) data samples (point or spatially exhaustive data) are scaled or aggregated. 
 
-Many ecological models rely on information patterns of distribution and dynamics of *primary producers* (i.e plant species, communities, or morphological or functional types of vegetation). Three examples that demonstrate the importance of appropriate scaling of vegetation information for ecological models. 
+Many ecological models rely on information patterns of distribution and dynamics of *primary producers* (i.e plant species, communities, or morphological or functional types of vegetation). 
 
 #### Earth System Models
-Earth system models (ESM) rely on remote sensing-derived products at various scales. Scaling methods have been developed to extrapolate primary productivity from the leaf and plant community scales to retrieve ecosystem, regional, and biome estimates of primary productivity @Sellers_1985, @Tucker_Sellers_1986, @Field_1991. 
+Earth System Models (ESM) rely on remote sensing-derived products at various scales. The relationship between gross primary productivity (GPP) and photosynthetically available radiation (PAR) in the photosynthetically active wavelengths is a function of the amount of photosynthetically active biomass.
+Amount of photosynthetically active biomass can be approximated by leaf area, the incident radiation intercepted by the active biomass, and the photosynthetic efficiency with which the fraction of absorbed PAR (fPAR) is converted into biomass. The two important biophysical variables, leaf area and fPAR, can be retrieved from spectral reflectance measurements of remotely sensed imagery. 
 
-The relationship between gross primary productivity (GPP) and photosynthetically available radiation (PAR) in the photosynthetically active wavelengths is a function of the amount of photosynthetically active biomass, which can be approximated by leaf area, the incident radiation intercepted by the active biomass, and the photosynthetic efficiency with which the fraction of absorbed PAR (fPAR) is converted into biomass. The two important biophysical variables, leaf area and fPAR, can be retrieved from spectral reflectance measurements of remotely sensed imagery. 
+The most commonly used vegetation index to estimate fPAR is the normalized difference vegetation index (NDVI). The MOD17 algorithm, for instance, relies on data from the Moderate Resolution Imaging Spectroradiometer (MODIS) @Running_1999, @Running_Zhao_2015 to estimate fPAR from NDVI.
 
-The most commonly used vegetation index to estimate fPAR is the normalized difference vegetation index (NDVI) @Baret_2007, @Ganguly_2008, @Cristiano_2010, @Du_2016. The MOD17 algorithm, for instance, relies on data from the Moderate Resolution Imaging Spectroradiometer (MODIS) @Running_1999, @Running_Zhao_2015 to estimate fPAR from NDVI @Knyazikhin_1999. Errors in retrieval of fPAR will lead to erroneous estimations of GPP. With the proliferation of spaceborne earth pversing satellites at various spatial resolutions, the retrieval of fPAR using vegetation indices has led to the investigation of spectral @Du_2016, @Brede_2020 and spatial scale dependencies @Propastin_2009 and the uncertainties introduced by the retrieval algorithms @Brede_2020, @Pu_2020. Spatial and spectral scale dependencies can be modeled if remotely-sensed data of different sensors can be cross-calibrated and products are comparable across spatial scales. As a result, spatial relationships can be translated to moderate-resolution imagery, acquired at higher temporal resolutions, to account for seasonal variability in productivity rates.
+Estimation of these variables from MODIS), which has high temporal resolution (daily) but coarse spatial resolution (500 m), relies on land-cover knowledge of each pixel @Steltzer_Welker_2006; @Zhao_2016.
 
-Estimation of biophysical variables using remotely sensed data have been identified and described for a suite of parameters and applications @Lu_2006. Spatial heterogeneity of land cover complicates retrieval and introduces error and uncertainty.
+LAI and fPAR are sensitive to land-cover information @Lotsch_2003, and the heterogeneity of vegetation types within a pixel affects LAI estimates in a nonlinear fashion @Garrigues_2006.
 
-Leaf Area Index (LAI), which estimates green leaf area per unit ground, and Fraction of Photosynthetically Active Radiation (FPAR) are two important biophysical variables in ecosystem gross primary productivity (GPP) models.
-
-Estimation of these variables from Moderate Resolution Imaging Spectroradiometer (MODIS), which has high temporal resolution (daily) but coarse spatial resolution (500 m), relies on land-cover knowledge of each pixel @Steltzer_Welker_2006; @Zhao_2016.
-
-Modeling GPP for wetlands that display high heterogeneity of land cover relative to the coarse resolution of MODIS is difficult @Feagin_2020.
-
-LAI and FPAR are sensitive to land-cover information @Lotsch_2003, and the heterogeneity of vegetation types within a pixel affects LAI estimates in a nonlinear fashion @Garrigues_2006.
-
-LAI errors at a coarse resolution are inversely related to the proportion of the dominant land cover in a pixel and large errors are introduced when the woody component makes up only a small proportion of otherwise non-woody pixels @Tian_2002.
-
-Therefore, maintaining sub-components at smaller fractions is useful for modeling LAI.
- 
-Lack of knowledge about mixed-pixel composition arises from coarse classification schemes or aggregation of detailed maps with algorithms that do not modify the classification scheme to accommodate mixed pixels (e.g., majority rule) at the scale of modeling the biophysical variable. 
+Therefore, knowing proportions or fractions of land cover is useful for modeling LAI. The lack of knowledge about mixed-pixel composition arises from coarse classification schemes or aggregation of detailed maps with algorithms that do not modify the classification scheme to accommodate mixed pixels (e.g., majority rule) at the scale of modeling the biophysical variable. 
 
 #### Land Cover Distribution and Transition Models
-Ecotone expansion rate relative to resolution of sensor or data model (example: mangrove expansion, tree island contraction).
+Ecotone expansion rate relative to resolution of sensor or data model (example: patch expansion and contraction).
 
 #### Species Distribution Model 
-Multi-scale species habitat models. At larger spatial scales mixed habitat presence might be of importance (example: bird habitat -foraging, roosting and nesting; mix of open and closed forest habitat, or mixes of tree species with specialist characteristic for foraging).
+Multi-scale species habitat models. At larger spatial scales mixed habitat presence might be of importance (example: bird habitat includes different habitat types for foraging, roosting and nesting; mix of open and closed forest habitat, or mixes of tree species with specialist characteristic for foraging).
 
 ### Summary
 
-When modeling ecological processes the scale of analysis needs to be supported by scale and precision of the data that are used in the model. For spatial modeling we often need to scale point or spatially exhaustive data sets to match the scale of analysis.
+When modeling ecological processes the scale of analysis needs to be supported by scale and precision of the data that are used in the model. For spatial modeling we often need to scale spatially exhaustive data sets to match the scale of analysis. 
 \t
 
 ## Spatial Data Scaling (Aggregation)
@@ -385,11 +374,9 @@ The MDGP-Scaling Algorithm has been developed to allow for more precise data agg
 * It allows for controlling representativeness of classes across the landscape
 * It provides quantitative assessment of compositional information retention (loss) at the cell level and at the landscape level.
 
-### Phytosociology Concept of Classification
+The concepts of phytosociology inspired the development of the MDGP-Scaling algorithm. Classification of plant communities on the basis of quantitative abundance or cover data and their analytical methods is common in vegetation ecology and phytosociology. 
 
-Classification of plant communities on the basis of quantitative data and analytical methods is common in vegetation ecology and phytosociology. Quantitative methods for vegetation classification go back to Braun Blanquet (citation) More recent methods and ... are covered in O. Wildi (), DeCaseres (), Tichy () .... 
-
-Criteria of a good classification system:
+Quantitative methods for vegetation classification go back to Braun_Blanquet_1964. More recent developments in the field identified criteria of a good vegetation classification system:
 
 * representative (three aspects)
 * reproducible
@@ -405,8 +392,7 @@ print('Answer: ')
 ### MDGP-Scaling Algorithm
 
 The MDGP-Scaling algorithm aggregates categorical data while simultaneously generating a non-hierarchical, representative classification system for the aggregated spatial scale similar to the concepts of Phytosociology. 
-
-The scaled data consistently preserves information at a significantly higher rate than other aggregation algorithms that do not account for classification scheme dependence.
+The scaled data consistently preserve information at a significantly higher rate than other aggregation algorithms that do not account for classification scheme dependence.
 
 #### The Parameters
 
@@ -553,7 +539,7 @@ prfx <- 'nlm_30'
 rel_abund <- landscapeScaling::relative_abundance_scaled_grid(map,class_field=classField,scale_factor=sf)
 
 # write relative abundance to file
-write.csv(rel_abund,file=paste0('./data/',prfx,'_sf',sf,'_rel_abund.csv'))
+write.csv(rel_abund,file=paste0('./',prfx,'_sf',sf,'_rel_abund.csv'))
 
 # classify relative abundance samples to multi-dimensional grid points with no restrictions on the representativeness threshold or monotypic class threshold
 mdgp_result <- landscapeScaling::mdgp_scale(rel_abund,parts=prts,rpr_threshold=0,monotypic_threshold=100)
@@ -642,6 +628,9 @@ rel_abund <- read.csv('./X.csv')
 # set parts between 2 and 5 corresponding to 50% up to 20% class label proportion (precision)
 prts <- 2
 
+# scale factor
+sf <- 3
+  
 # set representativeness and monotypic class thresholds 
 rpr <- 0
 mono <- 100
@@ -656,13 +645,13 @@ mdgp_raster <- landscapeScaling::scaling_result_to_raster(mdgp_result,class_name
 # -----------------------------------------------
 # plot the scaled map
 x11();terra::plot(mdgp_raster[[1]],col=col12,mar=c(1.5,1.5,1.5,8),
-            main=paste0('Scaled Classes for ',prt,' parts'),cex.main = 1.2,
+            main=paste0('Scaled Classes for ',prts,' parts'),cex.main = 1.2,
             plg=list( title = "Class Name",title.cex = 1, cex = 1),
             pax=list(cex.axis = 1 ))
 
 # plot information retention of the scaled map
 x11();terra::plot(mdgp_raster[[2]],col=gray.colors(20,start=0.1,end=1),mar=c(1.5,1.5,1.7,8),
-            main=paste0('Information Retention for ',prt,' parts'),cex.main = 1.2,
+            main=paste0('Information Retention for ',prts,' parts'),cex.main = 1.2,
             plg=list( title = "IR %",title.cex = 1, cex = 1),
             pax=list(cex.axis = 1 ))
 # -----------------------------------------------
@@ -680,11 +669,6 @@ print(mdgp_raster[[3]])
 print('Answer: ')
 ```
 
-----
-
-### Summary of MDGP-Scaling Concept
-
-Summary and Conclusions
 
 ----
 
@@ -708,7 +692,7 @@ When scaling real landscapes and the extent of the area is very large, it is ver
 
 Study Area: A small subset of a wetland within Water Conservation Area 3A in the greater Everglades ecosystem complex. The study area is a healthy landscape with the typical ridge and slough pattern of alternating  ... .
 
-The study area was mapped from 2010 and 2013 WorldView 2 (WV2) bi-seasonal data acquired during wet conditions in Novemeber 2010 and dry conditions in May 2013. 
+The study area was mapped from 2010 and 2013 WorldView 2 (WV2) bi-seasonal data acquired during wet conditions in November 2010 and dry conditions in May 2013.
 
 The plant communities that were mapped from WV 2 are: 
 ```{r, load-pc-lut, eval=FALSE, include=TRUE}
@@ -730,7 +714,7 @@ print(read.csv(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/dat
 ## Reclassify the original Plant Community Map to Morphological Classes 
 
 # set working directory
-setwd(wd)
+setwd('')
 
 # load map 
 veg_map <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/plant_communities_wv2.tif'))
@@ -787,8 +771,8 @@ sf <- 15
 # calculate the relative abundance
 system.time(rel_abund <- landscapeScaling::relative_abundance_scaled_grid(veg_map,class_field=classField,scale_factor=sf))
 
-# write relative abundance to .csv file
-write.csv(rel_abund,file=paste0('./pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
+# write relative atbundance to .csv file
+write.csv(rel_abund,file=pase0('./pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
 ```
 
 ----
@@ -865,8 +849,8 @@ terra::writeRaster(mdgp_raster[[1]],file=paste0('./',prfx,'prts',prts,'_rpr',rpr
 
 **Questions**
 
-**... ?**
-**... ?**
+**How does representativeness affect mean IR?**
+**How does precision (parts) affect mean IR? ?**
 ```{r, questions-4-3-response, exercise=TRUE}
 print('Answers: ')
 ```
@@ -918,20 +902,21 @@ x11();terra::plotRGB(ls, 5, 4, 3, stretch="hist")
 Evaluate the detectability of the scaled classes from .
 
 The next block of code will:
+
 - load the scaled map with mixed class labels
 - convert the map to points
 - extract spectral signatures for each 30 m grid cell from the Landsat stack
 - evaluate the class separability using cross-validated random forest models
 - calculate the partial-credit weighted accuracy
 
-The parameters that need to be set for the random forest calssifier training 
+The parameters that need to be set for the random forest classifier training
 
-```{r, sig-eval, exercise=TRUE, eval=FALSE}
+```{r, sig-eval, exercise=TRUE, eval=FALSE, fig.show='hide'}
 # set working directory
 setwd('')
 
 # load sourced function
-source(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/functions/partial_credit_weighted_accuracy.R')
+source(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/functions/partial_credit_weighted_accuracy.R'))
 
 # landsat image
 ls_nme <- 'L5TM_20111110_atmcor_sub.tif'
@@ -959,10 +944,10 @@ nrow(gridTune)
 # ========== DO NOT MODIFY BEYOND THIS LINE ==========
 
 # load spectral Landsat data
-spc.rst <- terra::rast(paste0('R.home(),/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/,ls_nme'))
+spc.rst <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/',ls_nme))
 
 # load scaled map and convert to vector
-map_class <- terra::rast(paste0('./',map_nme))
+map_class <- terra::rast(paste0(R.home(),'/library/mdgpTutorial/tutorials/MDGP_Scaling/data_raw/',map_nme))
 map.pnt <- terra::as.points(map_class, na.rm=TRUE)
 
 # extract signature and join to class info

@@ -22,7 +22,7 @@ The required packages for this tutorial that will be installed together with the
 - terra
 - sf
 - NLMR (dep.: raster, rgdal)
-- landscapetools
+- BAMMtools
 - caret
 
 ```{r setup, include=FALSE}
@@ -36,20 +36,14 @@ col12 <- c('#882255','#CC6677','#332288','#DDCC77','#117733','#88CCEE','#44AA99'
 packages_installed <- rownames(installed.packages())
 
 # required package names from CRAN
-packages <- c('remotes','devtools','landscapetools','terra','sf','leaflet','compositions','caret')
+packages <- c('remotes','devtools','terra','sf','leaflet','compositions','caret','BAMMtools')
 
 # install missing packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages],repo = 'https://cran.uni-muenster.de/', dependencies = TRUE)
 }
-# remotes packages
-if(!'RandomFieldsUtils' %in% packages_installed){
-  remotes::install_github("cran/RandomFieldsUtils")
-}
-if(!'RandomFields' %in% packages_installed){
-  remotes::install_github("cran/RandomFields")
-}
+
 if(!'NLMR' %in% packages_installed){
   remotes::install_github("ropensci/NLMR")
 }
@@ -60,7 +54,6 @@ print('All required packages were installed')
 
 # load libraries
 library(NLMR)
-library(landscapetools)
 library(sf)
 library(terra)
 library(scales)
@@ -72,13 +65,9 @@ library(caret)
 
 The package {landscapeScaling} provides the methods and functions to upscale categorical raster data using the Multi-Dimensional Grid-Point scaling method by @Gann_2019. The method generates a new classification scheme on the basis of user desired class label precision of mixed classes and representativeness of the scaled classes across the landscape of interest. 
 
-The scaling procedure creates scaled categorical raster maps with mixed classes, a corresponding continuous raster with compositional information retention calculations for each scaled grid cell, class-specific and landscape-level mean and standard deviation of information retention.
+The scaling procedure creates scaled categorical raster maps with mixed classes, a corresponding continuous raster with compositional information retention calculations for each scaled grid cell, class-specific and landscape-level mean and standard deviation of information retention.The functions for MDGP-Scaling can be divided into two types of functions. The low-level functions follow a step-wise procedure of the scaling process. The high-level function 'mdgp_scale_raster' nests several functions to produce a scaled product from the raw categorical raster input. We will explore first the step-wise procedure before using the nested functions.
 
-The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with devtools:
-
-devtools::install_github("gannd/landscapeScaling") (installed during setup).
-
-The functions for MDGP-Scaling can be divided into two types of functions. The low-level functions follow a step-wise procedure of the scaling process. The high-level function 'mdgp_scale_raster' nests several functions to produce a scaled product from the raw categorical raster input. We will explore first the step-wise procedure before using the nested functions.
+The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with devtools (devtools::install_github("gannd/landscapeScaling") during the installation of this tutorial.
 
 ### Verify Working Directory
 ```{r, wd-verify, exercise=TRUE, eval=FALSE}
@@ -193,13 +182,13 @@ To explore and demonstrate the complexity of categorical data scaling and the ef
 
 **Procedure:**
 
-- generate a small landscapes with a pre-defined number of categories (richness) and with different levels of spatial heterogeneity
+- generate a small landscape with a pre-defined number of categories (richness) and with different levels of spatial heterogeneity
 - generate a scaling grid for a specified scale factor to delineate spatial aggregation units 
 - assign labels to the scaled grids on the basis of the plurality rule and calculate compositional information retention at the cell level and at the landscape level
 
-To generate the landscapes we will use an R package that generates neutral landscapes with known properties. The package is called Neutral Landscape Models for R (NLMR) https://ropensci.github.io/NLMR/. To categorize the landscapes we will use a function from the 'landscapetools' R package. 
+To generate the landscapes we will use an R package that generates neutral landscapes with known properties. The package is called Neutral Landscape Models for R (NLMR) https://ropensci.github.io/NLMR/. To categorize the landscapes we will use the classify function from the 'terra' package, generating the class breaks using the Jenks method as implemented in the 'BAMMtools' package.
 
-We will then use manually apply the plurality rule that does not modify the classification scheme but only uses original class labels for the spatially aggregated geographic units. 
+We will then manually apply the plurality rule that does not modify the classification scheme but only uses original class labels for the spatially aggregated geographic units.
 
 For plotting purpose a color scheme that is used for all plotting has been set up. The color scheme is a color-blind safe choice (Paul Ton  https://personal.sron.nl/~pault/#sec:qualitative)
 
@@ -210,9 +199,9 @@ scales::show_col(col12)
 
 ----
 
-We will first explore landscape characteristics for random landscape patterns. We will vary the number of classes (c) and roughness parameter (r) which controls the level of spatial aggregation. For simplicity, the random landscapes will be rasters with equal numbers of rows and columns.
+We will first explore landscape characteristics for random landscape patterns. We will vary the number of classes (c) and the roughness parameter (r) which controls the level of spatial aggregation. For simplicity, the random landscapes will be rasters with equal numbers of rows and columns.
 
-We will generate a grid that scales the original maps with a scale factor (sf) that is an odd number. This means that each block of *sf* by *sf* cells will be replaced by an aggregated cell. The grid is generated with a function of the {sf} package and plotted on top of the landscape. 
+We will generate a grid that scales the original maps with a scale factor (sf). This means that each block of *sf* by *sf* cells will be replaced by an aggregated cell. The grid is generated with a function of the {sf} package and plotted on top of the landscape. For simplicity we will use an odd scale factor. 
 
 Start with exploring the effects of the roughness parameter (r) on the landscape pattern with three classes. Then increase the number of classes (c), and/or the size of the landscapes (n).
 
@@ -222,7 +211,7 @@ Start with exploring the effects of the roughness parameter (r) on the landscape
 
 # landscape characteristics
 n <- 10   # number of rows and columns: 1 more than cells per row and column!
-c <- 3   # number of classes
+c <- 5   # number of classes: 2 more than classes ; first break point 0 and last break point 1 are not included
 r <- 0.04   # roughness
 
 # scaling parameters
@@ -230,21 +219,18 @@ sf <- 3   # set the scale factor
 
 # ======= DO NOT MODIFY BEYOND THIS LINE =======
 
-# generate the landscape
-nlm <- NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r)
+# generate the landscape and convert to SpatRaster object.
+nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
 # classify the midpoint-displacement generated grid into x categorical classes
-nlm_cat <- landscapetools::util_classify(nlm,n = c)    
-
-# convert the RasterLayer object to a terra SpatRaster
-nlm_cat <- terra::rast(nlm_cat)
+nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
 
 # assign class names to the three raster values 
 levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c])) 
 # -----------------------------------------------
 # plot the categorized landscape
 x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
-            main=paste0((n-1)^2,' Cell Landscape of ',c,' Classes and Roughness ',r),
+            main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
             cex.main = 1.2,
             plg=list(title = 'Class Names',
             title.cex = 1, cex = 1),
@@ -256,7 +242,14 @@ g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
 # plot the grid
 plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 ```
-Change parameters and re-run the code. Increase the number of classes (c), and/or the size of the landscapes (n). Every execution generates a new map that can be compared to the previous ones.
+Change parameters (c) and/or (n) and re-run the code. Every execution generates a new map that can be compared to the previous ones. 
+
+Now vary the roughness factor (r) and observe the effect.
+
+**Describe the effect of parameters class number and roughness on the heterogeneity of the landscape.** 
+```{r, roughness-problem, exercise=TRUE}
+print('Answer: ')
+```
 
 When you understand the effect of all parameters on the landscape pattern and the scaling grid, close all plot windows and complete **Problem 1**.
 
@@ -265,7 +258,7 @@ When you understand the effect of all parameters on the landscape pattern and th
 \t
 \newline
 
-**Problem 1:** Quantify the effects of landscape heterogeneity (roughness) on class percent differences between original and scaled landscape and on compositional information retention.
+**Problem 1:** Quantify the effects of landscape heterogeneity on class percent differences between original and scaled landscape and on compositional information retention.
 
 - Generate two landscapes with 81 grid cells and 3 classes. One landscape has a roughness of .01, the other .95.
 - Scale the landscapes with scale factor 3.
@@ -285,29 +278,23 @@ sf <- 3
 
 # ========== DO NOT MODIFY BEYOND THIS LINE ==========
 
-# generate the landscape
-nlm <- NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r)
+# generate the landscape and convert to SpatRaster object.
+nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
-# classify midpoint-displacement generated grid into c categorical classes
-nlm_cat <- landscapetools::util_classify(nlm,n = c)    
-
-# convert the RasterLayer object to a terra SpatRaster
-nlm_cat <- terra::rast(nlm_cat)
-
-# assign class names to the three raster values 
-levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c]))
+# classify the midpoint-displacement generated grid into x categorical classes
+nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
 
 # generate a grid for scale factor 
 g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
 
 # calcualte class proportions
 class_dist <- terra::freq(nlm_cat)
-class_dist$prop <- round(prop.table(class_dist[,3]),3)
+class_dist$prop <- round(prop.table(class_dist[,3]),2)
 print(class_dist)
 # -----------------------------------------------
 # plot the categorized landscape
 x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
-                  main=paste0((n-1)^2,' Cell Landscape of ',c,' Classes and Roughness ',r),
+                  main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
                   cex.main = 1.2,
                   plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
 terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
@@ -326,18 +313,29 @@ Add syntax to calculate class percentages for each scaled landscape and percent 
 nlm_r.01_cls.prp <- data.frame(class=c('A','B','C'),prp=c(x,x,x))
 nlm_r.95_cls.prp <- data.frame(class=c('A','B','C'),prp=c(x,x,x))
 
-# add the nine class labels for each of the two landscapes to each of the class vectors and calculate the percent class cover for the original and scaled grid. 
+# using the majority rule, determine the class for each scaled 3x3 cell and add the class labels for each of the two landscapes to each of the class vectors. 
 nlm_r.01_scl3.cls <- c('X','X','X','X','X','X','X','X','X')
 nlm_r.95_scl3.cls <- c('X','X','X','X','X','X','X','X','X')
 
 # generate a data frame with percentage cover of each scaled landscape
-nlm_r.01_scl3.prp <- as.data.frame(round(prop.table(table(nlm_r.01_scl3)),3))
+nlm_r.01_scl3.prp <- as.data.frame(round(prop.table(table(nlm_r.01_scl3.cls)),2))
 names(nlm_r.01_scl3.prp) <- c('class_s_3','prp')
+print(nlm_r.01_scl3.prp)
 
-nlm_r.95_scl3.prp <- as.data.frame(round(prop.table(table(nlm_r.95_scl3)),3))
+nlm_r.95_scl3.prp <- as.data.frame(round(prop.table(table(nlm_r.95_scl3.cls)),2))
 names(nlm_r.95_scl3.prp) <- c('class_s_3','prp')
+print(nlm_r.95_scl3.prp)
 
-# add code to calculate percent cover differences between scaled and original maps for both landscapes
+# calculate percent cover differences between scaled and original maps for both landscapes
+print('difference for 0.1')
+x.01 <- merge(nlm_r.01_cls.prp,nlm_r.01_scl3.prp,by.x='class',by.y='class_s_3')
+x.01$diff <- x.01$prp.y - x.01$prp.x
+print(x.01)
+
+print('difference for 0.95')
+x.95 <- merge(nlm_r.95_cls.prp,nlm_r.95_scl3.prp,by.x='class',by.y='class_s_3')
+x.95$diff <- x.95$prp.y - x.95$prp.x
+print(x.95)
 
 ```
 
@@ -345,7 +343,7 @@ Calculate the cell-specific information retention for both landscapes using the 
 $IR_{c}$ is the compositional information retention; $P_{i}smp$ is the proportion of class $i$ of the high-resolution grid within the scaled grid cell, and $P_{i}scaled$ is the proportion of class $i$ retained in the scaled grid cell label.
 
 ```{r, nlm-ir, eval=FALSE, exercise=TRUE}
-# calculate IRc for each of the 9 scaled grid cells for both landscapes and add the values to the respective vectors, replacing x with the IRc values.
+# manually calculate IRc for each of the 9 scaled grid cells for both landscapes and add the values to the respective vectors, replacing x with the IRc values.
 nlmr_r.01_scl3.ir <- c(x,x,x,x,x,x,x,x,x)
 nlmr_r.95_scl3.ir <- c(x,x,x,x,x,x,x,x,x)
 # -----------------------------------------------
@@ -468,31 +466,34 @@ We will first generate the landscape that will then be scaled with scale factors
 setwd('')
 
 # landscape characteristics
-n <- 31   # number of rows and columns
-r <- 0.56   # roughness
-c <- 3   # number of classes
+n <-    # number of rows and columns
+r <-    # roughness
+c <-    # number of classes - remeber to add 2 more for 0 and 1 
 
 # ========== DO NOT MODIFY BEYOND THIS LINE ==========
 
-# generate the landscape
-nlm <- NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r)
+# generate the landscape and convert to SpatRaster object.
+nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
 # classify the midpoint-displacement generated grid into x categorical classes
-nlm_cat <- landscapetools::util_classify(nlm,n = c)    
+nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
 
-# convert the RasterLayer object to a terra SpatRaster
-nlm_cat <- terra::rast(nlm_cat)
+# generate a grid for scale factor 
+g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
 
-# assign class names to the three raster values 
-levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c])) 
+# calculate class proportions
+class_dist <- terra::freq(nlm_cat)
+class_dist$prop <- round(prop.table(class_dist[,3]),2)
+print(class_dist)
 # -----------------------------------------------
 # plot the categorized landscape
 x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
-            main=paste0((n-1)^2,' Cell Landscape of ',c,' Classes and Roughness ',r),
-            cex.main = 1.2,
-            plg=list(title = 'Class Names',
-            title.cex = 1, cex = 1),
-            pax=list(cex.axis = 1 ))
+                  main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
+                  cex.main = 1.2,
+                  plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
+terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
+
+print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!')
 
 # write the landscape to file so it can be used in the next exercise (not in memory!)
 terra::writeRaster(nlm_cat,paste0('./nlm_',n-1,'.tif'),overwrite=TRUE)
@@ -521,7 +522,7 @@ For each scaled grid cell, the function returns the original class abundances, t
 setwd('')
 
 # read the landscape
-map <- terra::rast('./nlm_[X].tif')   # replace X wit the resolution of the map to be used
+map <- terra::rast('./nlm_[X].tif')   # replace X with the resolution of the map to be used
 classField <- 'lc'
 
 # set the precision parameter parts
@@ -772,7 +773,7 @@ sf <- 15
 system.time(rel_abund <- landscapeScaling::relative_abundance_scaled_grid(veg_map,class_field=classField,scale_factor=sf))
 
 # write relative atbundance to .csv file
-write.csv(rel_abund,file=pase0('./pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
+write.csv(rel_abund,file=paste0('./pc5_sf',sf,'_rel_abund.csv'),row.names = FALSE)
 ```
 
 ----
@@ -1024,7 +1025,7 @@ print('Answers: ')
 
 ## Acknowledgements
 
-This tutorial and the package **landscapeScaling** rely heavily on functions from R packages **terra** [@terra], **sf** [@sf_1, @sf_2] **compositions** [@compositions], **NLMR** and **landscapetools** [@NLMR], **partitions** [@partitions].
+This tutorial and the package **landscapeScaling** rely heavily on functions from R packages **terra** [@terra], **sf** [@sf_1, @sf_2] **compositions** [@compositions], **NLMR** [@NLMR], and **partitions** [@partitions].
 
 ## References {-}
 

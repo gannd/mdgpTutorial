@@ -2,14 +2,14 @@
 title: "Multi-Dimensional Grid-Point Scaling"
 author: "Daniel Gann"
 date: "`r Sys.Date()`"
-output:
+output: 
   learnr::tutorial:
-    progressive: true
-    allow_skip: true
-    theme: "simplex"
-    highlight: "espresso"
 runtime: shiny_prerendered
-bibliography: references.bib
+theme: simplex
+highlight: espresso
+progressive: true
+allow_skip: true
+description: "Learn how to use the MDGP-Scaling algorithm of the R package landscapeScaling. The first part of the tutorial introduces theory and a new method to scale categorical raster data, taht considers information retention and representativeness of the scaled classes. The second part of the tutorial evaluates the detection of the scaled classes from remotely sensed data."
 ---
 
 ## Processing Environment
@@ -199,11 +199,11 @@ scales::show_col(col12)
 
 ----
 
-We will first explore landscape characteristics for random landscape patterns. We will vary the number of classes (c) and the roughness parameter (r) which controls the level of spatial aggregation. For simplicity, the random landscapes will be rasters with equal numbers of rows and columns.
+We will first explore landscape characteristics for random landscape patterns. We will vary the number of classes (c), the roughness parameter (r), and the number of columns and rows (n) that control the size of the landscape. For simplicity, the random landscapes will have equal numbers of rows and columns.
 
 We will generate a grid that scales the original maps with a scale factor (sf). This means that each block of *sf* by *sf* cells will be replaced by an aggregated cell. The grid is generated with a function of the {sf} package and plotted on top of the landscape. For simplicity we will use an odd scale factor. 
 
-Start with exploring the effects of the roughness parameter (r) on the landscape pattern with three classes. Then increase the number of classes (c), and/or the size of the landscapes (n).
+Start with the default parameter settings, executing the code by clicking hte Run button. 
 
 ```{r, nlm-1, exercise=TRUE, exercise.lines=42, eval=FALSE, include=FALSE}
 ## generate a landscape with 'n' by 'n' cells and 'c' classes.
@@ -242,16 +242,20 @@ g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
 # plot the grid
 plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 ```
-Change parameters (c) and/or (n) and re-run the code. Every execution generates a new map that can be compared to the previous ones. 
-
-Now vary the roughness factor (r) and observe the effect.
+We will now explore the effects of the roughness parameter (r) on the landscape pattern with three classes. Then increase the number of classes (c), and/or the size of the landscapes (n) and re-run the code with different roughness levels. Every execution generates a new map that can be compared to the previous ones.
 
 **Describe the effect of parameters class number and roughness on the heterogeneity of the landscape.** 
 ```{r, roughness-problem, exercise=TRUE}
 print('Answer: ')
 ```
 
-When you understand the effect of all parameters on the landscape pattern and the scaling grid, close all plot windows and complete **Problem 1**.
+Now vary the scale factor parameter. To be able to use larger scale factors increase (n) to 40,  
+
+**How does the scale factor (sf) related to the number of pixels that will be replaced by a single pixel in the scaled landscape** 
+```{r, scale-factor-problem, exercise=TRUE}
+print('Answer: ')
+```
+close all plot windows and complete **Problem 1**.
 
 ----
 
@@ -284,10 +288,10 @@ nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 # classify the midpoint-displacement generated grid into x categorical classes
 nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
 
-# generate a grid for scale factor 
-g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
+# assign class names to the three raster values 
+levels(nlm_cat) <- data.frame(value=c(1:(c-2)),lc=c(LETTERS[1:(c-2)])) 
 
-# calcualte class proportions
+# calculate class proportions
 class_dist <- terra::freq(nlm_cat)
 class_dist$prop <- round(prop.table(class_dist[,3]),2)
 print(class_dist)
@@ -297,7 +301,10 @@ x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
                   main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
                   cex.main = 1.2,
                   plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
-terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
+
+# generate a grid for scale factor and plot
+g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
+plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 
 print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!')
 ```
@@ -394,7 +401,7 @@ The scaled data consistently preserve information at a significantly higher rate
 
 #### The Parameters
 
-The three parameters that determine the classes of the scaled classification scheme are: 
+The four parameters that determine the classes of the scaled classification scheme are: 
 
 **Precision**
 
@@ -402,9 +409,17 @@ The three parameters that determine the classes of the scaled classification sch
 
 **Representativeness**
 
-* $rpr-threshold$ determines the minimum percent presence of a scaled class across the landscape (study area). Classes that are below the threshold are merged with classes that maximize information retention
+Representativeness is evaluated at three different levels 
 
+At the landscape level:
+* $rpr-threshold$ determines the minimum percent presence of a scaled class across the landscape (study area). Classes that are below the threshold are merged with classes that maximize information retention. The only classes exluded are the monotypic classes tha tcan be present at lower percentages.
+
+At the class level:
 * $monotypic-threshold$ determines the threshold for class abundance to be considered a monotypic class and to be retained in the final classification scheme even when present at less than the representativeness threshold across the landscape
+
+At the cell level:
+* $ir-threshold$ determines the threshold for information retention at the cell-level. If a cell has an information retention below this threshold the cell is assinged the class 'ZZZ_Other' (to assure the class is last in the alphabetic listing it has the prefix ZZZ_). 
+
 
 ----
 
@@ -478,8 +493,8 @@ nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 # classify the midpoint-displacement generated grid into x categorical classes
 nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
 
-# generate a grid for scale factor 
-g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
+# assign class names to the three raster values 
+levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c])) 
 
 # calculate class proportions
 class_dist <- terra::freq(nlm_cat)
@@ -491,6 +506,9 @@ x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
                   main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
                   cex.main = 1.2,
                   plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
+
+# generate a grid for scale factor and plot
+g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
 terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 
 print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!')
@@ -499,7 +517,7 @@ print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK B
 terra::writeRaster(nlm_cat,paste0('./nlm_',n-1,'.tif'),overwrite=TRUE)
 ```
 
-The landscape was written to the wroking directory folder as a ".tif" file. It will be loaded in all subsequent chunks.
+The landscape was written to the working directory folder as a ".tif" file. It will be loaded in all subsequent chunks.
 
 ----
 
@@ -542,8 +560,8 @@ rel_abund <- landscapeScaling::relative_abundance_scaled_grid(map,class_field=cl
 # write relative abundance to file
 write.csv(rel_abund,file=paste0('./',prfx,'_sf',sf,'_rel_abund.csv'))
 
-# classify relative abundance samples to multi-dimensional grid points with no restrictions on the representativeness threshold or monotypic class threshold
-mdgp_result <- landscapeScaling::mdgp_scale(rel_abund,parts=prts,rpr_threshold=0,monotypic_threshold=100)
+# classify relative abundance samples to multi-dimensional grid points with no restrictions on the representativeness threshold, monotypic class threshold, and the default information retention threshold of 1%
+mdgp_result <- landscapeScaling::mdgp_scale(rel_abund,parts=prts,rpr_threshold=0,monotypic_threshold=100,ir_threshold=1)
 
 # write the scaled data frame to .rds file
 saveRDS(mdgp_result,file=paste0('./',prfx,'_sf',sf,'_prts',prts,'.rds'))
@@ -632,13 +650,13 @@ prts <- 2
 # scale factor
 sf <- 3
   
-# set representativeness and monotypic class thresholds 
-rpr <- 0
-mono <- 100
-
+# set representativeness, monotypic class, and cell-level information  retention thresholds 
+rpr_th <- 0
+mono_th <- 100
+ir_th <- 50
 # ======= DO NOT MODIFY BEYOND THIS LINE =======
 
-mdgp_result <- mdgp_scale(rel_abund,parts=prts,rpr_threshold=rpr,monotypic_threshold=mono)
+mdgp_result <- mdgp_scale(rel_abund,parts=prts,rpr_threshold=rpr_th,monotypic_threshold=mono_th,ir_threshold=ir_th)
 print(mdgp_result)
 # -----------------------------------------------
 # convert classified points and location-specific information retention to raster
@@ -811,14 +829,15 @@ prfx <- 'pc5_sf15_'
 # set parts between 2 and 5 corresponding to 50% up to 20% class label proportion (precision)
 prts <- 2
 
-# set representativeness and monotypic class thresholds 
-rpr <- 0
-mono <- 100
+# set representativeness, monotypic class, and cell-level information  retention thresholds 
+rpr_th <- 0
+mono_th <- 100
+ir_th <- 50
 
 # ======= DO NOT MODIFY BEYOND THIS LINE =======
 
 # classify relative abundance samples to multi-dimensional grid points with no restrictions on the representativeness threshold or monotypic class threshold
-mdgp_result <- landscapeScaling::mdgp_scale(x=rel_abund,parts=prts,rpr_threshold=rpr,monotypic_threshold=mono)
+mdgp_result <- landscapeScaling::mdgp_scale(x=rel_abund,parts=prts,rpr_threshold=rpr_th,monotypic_threshold=mono_th,ir_threshold=ir_th)
 print(mdgp_result)
 
 # write the scaled data frame to .rds file

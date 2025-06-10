@@ -1,5 +1,5 @@
 Package: mdgpTutorial
-Title: Tutorial for the MDGP-Scaling Algorithm
+Title: Tutorials for the MDGP-Scaling Algorithm
 Version: 0.0.1.0000
 Authors@R: 
     person(given = "Daniel", 
@@ -7,18 +7,17 @@ Authors@R:
     email = "gannd@fiu.edu", 
     role = c("aut", "cre"),
     comment = c(ORCID = "0000-0001-6131-3391"))
-Description: Tutorial to explore the multi-dimensional grid-point (mdgp) scaling method and algorithm to scale categorical raster data. MDGP-Scaling is a method and alogrithm delivered in the R package landscapeScaling. The tutorial introduces theory and methods of scaling and how to upscale categorical raster data, considering the scale factor and information retention of the scaled classes across the landscape. The second part of the tutorial evalauted the detection of scaled classes from remotely sensed data. The main functions are available in the R package "lndscapeScling". The MDGP-Scaling algorithm generates a new classification scheme on the basis of user desired class label precision of mixed classes and representativeness of the scaled class across the landscape of interest. The scaling output provides scaled categorical raster maps with mixed classes, a corresponding continuous raster with information retention calculations for each scaled grid cell and class-specific and landscape-scale mean and standard deviation of information retention.
+Description: Learn how to use the MDGP-Scaling algorithm to scale categorical raster data. The tutorial introduces theory and methods of scaling and how to upscale categorical raster data, considering the scale factor and information retention of the scaled classes across the landscape. The MDGP-Scaling alogrithm is implemented in the R package landscapeScaling. In the second part of the tutorial the detection of scaled classes from remotely sensed data is evaluated.
 License: GPL (>=3)
 Imports:
     landscapeScaling,
     terra,
     compositions,
     partitions,
-    terra,
     stats
 URL: https://github.com/gannd/mdgpTutorial,
-    https://gannd.github.io/landscapeScaling/
-BugReports: https://github.com/gannd/landscapeScaling/issues
+    https://gannd.github.io/mdgpTutorial/
+BugReports: https://github.com/gannd/mdgpTutorial/issues
 Depends:
     R (>= 4.2)
 VignetteBuilder:

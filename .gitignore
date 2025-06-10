@@ -2,7 +2,23 @@
 .Rhistory
 .RData
 .Ruserdata
-.Rdata
-.httr-oauth
 .DS_Store
-.quarto
+.vscode
+__pycache__
+Untitled
+issues
+node_modules
+
+# atom config folder
+.atom/
+
+# html tutorial output
+inst/tutorials/*/*.html
+inst/tutorials/*/*.sqlite
+
+# deployment output
+rsconnect/
+inst/doc
+doc
+Meta
+reference/

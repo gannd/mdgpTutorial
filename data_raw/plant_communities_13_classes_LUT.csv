@@ -1,14 +1,14 @@
-﻿value,class
-1,ow
-2,pf
-3,glEBs
-4,blEmix
-5,blEPv
-6,blFNo
-7,oMFUx
-8,gMCl
-9,gMTy
-10,gMT
-11,sB
-12,sSc
-13,tB
+﻿value,class,class_name
+1,ow,Open Water
+2,pf,Floating Periphyton
+3,blEBs,Broadleaf Emergent Blechnum serrulatum
+4,blEmix,Broadleaf Emergent mixed
+5,blEPv,Broadleaf Emergent Peltandra virginica
+6,blFNo,Broadleaf Floating Nymphaea odorata
+7,oMFUx,Open Marsh Floating Utricularia spp.
+8,gMCl,Graminoid Marsh
+9,gMTy,Graminoid Marsh
+10,gMT,Graminoid Marsh
+11,sB,Shrub Bayhead
+12,sSc,Shrub Salix caroliniana
+13,tB,Tree Bayhead

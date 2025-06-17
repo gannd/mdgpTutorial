@@ -143,4 +143,5 @@ summary.wghtAdjAcc <- function(wghtAdjAcc, alpha=0.05) {
 # confidence interval function
 ci <-function(var,n,alpha) {
   qnorm(1-(alpha/2))*sqrt(var) + (1/(2*n))
+
 }

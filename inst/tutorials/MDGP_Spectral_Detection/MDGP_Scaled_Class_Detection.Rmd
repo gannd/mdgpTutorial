@@ -397,4 +397,3 @@ This tutorial and the package **landscapeScaling** rely heavily on functions fro
 ## References {-}
 
 <div id="refs"></div>
-

@@ -1,0 +1,400 @@
+---
+title: "(2) Spectral Detection of MDGP-Scaled Classes"
+author: "Daniel Gann"
+date: "`r Sys.Date()`"
+output: 
+  learnr::tutorial:
+runtime: shiny_prerendered
+theme: simplex
+highlight: espresso`
+progressive: true
+allow_skip: true
+description: "The first part of the tutorial introduced theory and a new method to scale categorical raster data, that considers information retention and representativeness of the scaled classes. The second part of the tutorial evaluates the detection of the scaled classes from remotely sensed data."
+bibliography: references.bib
+csl: https://raw.githubusercontent.com/citation-style-language/styles/master/research-institute-for-nature-and-forest.csl
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+
+tutorial_options(exercise.timelimit = 180)
+# set up color scheme 
+col12 <- c('#882255','#CC6677','#332288','#DDCC77','#117733','#88CCEE','#44AA99','#999933','#AA4499','#000000','#FFFFFF','#888888')
+ 
+# install missing packages
+packages_installed <- rownames(installed.packages())
+
+# required package names from CRAN
+packages <- c('caret','scales')
+
+# install missing packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages],repo = 'https://cran.uni-muenster.de/', dependencies = TRUE)
+}
+
+print('All required packages were installed')
+
+```
+## Processing Environment
+
+The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with devtools (devtools::install_github("gannd/landscapeScaling"). 
+
+During the installation of this tutorial, the package {caret} and its dependencies were also installed for the classification procedures of the second part of this tutorial.
+
+**Just as in part 1, we will have to set our working directory explicitly in every chunk where data will be written and read for subsequent exercise components.**
+
+
+## Objectives for Scaling of Real Landscapes
+
+The scaling of categorical data models that represent real landscapes can be computationally very demanding. To determine the optimal scaling parameters, the purpose of the scaling process needs to be considered.
+
+If the scaling has the objective to detect the scaled classes from lower resolution remotely sensed data (e.g.,  to detect change over time using various remotely sensed data products with different spatial and spectral resolutions), then the detection probability and accuracy of class detection should be considered in the parameter selection for precision and representativeness of the scaled classes.
+
+If the goal is to extract biophysical variables from coarser remotely sensed data, the precision of class mixes might be the most important parameter, especially when the landscape is heterogeneous with regard to the biophysical variable of interest (e.g., a more precise mix of woody and herbaceous vegetation classes will lead to higher precision of biomass estimates).
+
+Is a specific grid alignment of importance? The detection of scaled classes from a specific sensor (e.g., Landsat Grid) might require a scaling process that best captures the mixed pixels that are captured by the sensor grid alignment. Contrary, if the goal is to generate classification schemes that best represent random locations in a landscape, then the inclusion of random origin grids should be considered as it better captures the representativeness of scaled classes across the landscape for random locations.
+
+The example of this tutorial aims at the detection of high-resolution scaled vegetation classes from a medium-resolution multispectral sensor. More specifically, we will scale a small subset of a wetland vegetation map to explore the detectability of the scaled classes from multispectral Landsat data. In exercise 1 we will evaluate the effects of scaling parameters on the scaled classification scheme. In exercise 2 we explore the detectability of the scaled classes from multispectral Landsat data.
+
+----
+
+## Exercise 1: Scaling of a Wetland Landscape
+
+Study Area: A small subset of a wetland in Water Conservation Area 3A within the greater Everglades ecosystem complex. The study area is a healthy landscape with the typical ridge and slough pattern of alternating sawgrass ridges and deep water slough habitat.
+
+The study area was mapped from 2010 and 2013 WorldView 2 (WV2) bi-season data acquired during wet conditions in November 2010 and dry conditions in May 2013 @Gann_Richards_2022.
+
+The plant communities that were mapped from WV 2 are:
+```{r, load-pc-lut, eval=TRUE, exercise=TRUE, include=TRUE}
+load('./data/plant_communities_13_classes_LUT.rda')
+plant_communities_13_classes_LUT
+```
+
+The original classes were reclassified to simplify the classification scheme for this exercise. The reclassified map has five classes that are reclassified according to the reclass table.
+
+```{r, load-rcl-lut, eval=TRUE, exercise=TRUE, include=TRUE}
+print('The classes are reclassfied to: ')
+load('./data/plant_communities_RCL.rda')
+plant_communities_RCL
+```
+
+----
+
+```{r, map-reclass, eval=FALSE, exercise=TRUE, include=TRUE}
+## Reclassify the original Plant Community Map to Morphological Classes 
+
+# load map 
+veg_map <- terra::rast('./data/plant_communities_wv2.tif')
+
+# load the look up table and assign the classes to the vegetation map
+load('./data/plant_communities_13_classes_LUT.rda')
+levels(veg_map) <- plant_communities_13_classes_LUT
+veg_map
+
+# load the reclassification table
+load('./data/plant_communities_RCL.rda')
+
+# reclassify the map
+veg_map_rcl <- terra::classify(veg_map,plant_communities_RCL[,c(1,3)])
+load('./data/plant_communities_5_classes_LUT.rda')
+levels(veg_map_rcl) <- plant_communities_5_classes_LUT
+
+x11();terra::plot(veg_map_rcl)
+```
+
+----
+
+**Questions Ex. 1**
+
+**What is the spatial resolution of the original map?**
+
+**What is the scale factor if we want to scale this map to Landsat 30 m resolution?**
+
+**What is the scale factor if we want to scale this map to Sentinel 20 m resolution?**
+
+**What is the scale factor if we want to scale this map to MODIS 250 m resolution?**
+
+----
+
+```{r, questions-1-1-response, exercise=TRUE}
+print('Answers: ')
+```
+
+----
+
+Generate the relative abundance of classes with scale factor 15. The relative abundance data frame will be saved to .csv to be used in the following chunks.
+
+```{r, sf-rel-abund, exercise=TRUE, exercise.lines=25, eval=FALSE, fig.show='hide'}
+# load map 
+veg_map <- terra::rast('./data/plant_communities_5_classes.tif')
+classField <- 'class'
+
+# subset the map to an area that captures the overall pattern of the landscape
+veg_map <- terra::crop(veg_map,terra::ext(518000,520000,2859000,2861000))
+
+# set the scale factor
+sf <- 15
+
+# ======= DO NOT MODIFY BEYOND THIS LINE =======
+
+# calculate the relative abundance
+system.time(rel_abund <- landscapeScaling::relative_abundance_scaled_grid(veg_map,class_field=classField,scale_factor=sf))
+
+# print first 100 records of the relative abundance data frame
+head(rel_abund,100)
+```
+
+----
+
+**Questions**
+
+**What are the expected dimensions (number of rows and columns) of the output grid?**
+** ... ?**
+
+```{r, questions-4-2-response, exercise=TRUE}
+print('Answers: ')
+```
+
+----
+
+## Explore the Effects of Class-Label Precision and Representativeness 
+
+To explore the effects of class-label precision (parts) and representativeness and information retention threshold on number of classes and information retention, we will generate several scaled classifications. Class-specific and landscape-level information retention and number of scaled classes will be compared for a set of 4 maps and their classification schemes. The parameter ranges will vary from 1 to 5 parts, between 0 and 20 % class representativeness and a minimum cell-level information retention between 0 and 80 %.  
+
+For a set of four scaled maps, note the parameter selection for the three paraemters and the resulting number of scaled classes, class-specific and landscape-level mean IR.
+
+```{r, map-scale, exercise=TRUE, exercise.lines=50, eval=FALSE, fig.show='hide'}
+## Explore the effects of class-label precision (parts) and representativeness on compositional information retention.
+## parts: 1 - 5
+## representativeness: 0, 1, 5, 10, 20
+# --------
+# set working directory
+wd <- ''
+
+# load relative abundance
+load('./data/pc5_sf15_rel_abund.rda')
+print(head(rel_abund <- pc5_sf15_rel_abund))
+
+# set output prefix
+prfx <- 'pc5_sf15_'
+
+# set parts between 2 and 5 corresponding to 50% up to 20% class label proportion (precision)
+prts <- 2
+
+# set representativeness, monotypic class, and cell-level information  retention thresholds 
+rpr_th <- 10
+mono_th <- 90
+ir_th <- 50
+
+# ======= DO NOT MODIFY BEYOND THIS LINE =======
+# set working directory
+setwd(wd)
+
+# classify relative abundance samples to multi-dimensional grid points with no restrictions on the representativeness threshold or monotypic class threshold
+mdgp_result <- landscapeScaling::mdgp_scale(x=rel_abund,parts=prts,rpr_threshold=rpr_th,monotypic_threshold=mono_th,ir_threshold=ir_th)
+print(mdgp_result)
+
+# write the scaled data frame to .rds file
+saveRDS(mdgp_result,file=paste0('./',prfx,'prts',prts,'_rpr',rpr_th,'_mono',mono_th,'.rds'))
+# -----------------------------------------------
+# convert classified points and location-specific information retention to raster
+mdgp_raster <- landscapeScaling::scaling_result_to_raster(scaling_result=mdgp_result,class_name_field='class_name',scale_factor=15)
+# -----------------------------------------------
+# plot the scaled map
+x11();terra::plot(mdgp_raster[[1]],col=col12,mar=c(1.5,1.5,1.5,8),
+            main=paste0('Scaled Classes: parts=',prts,'; rpr=',rpr_th,'; mono=',mono_th),cex.main = 1.2,
+            plg=list( title = "Class Name",title.cex = 1, cex = 1),
+            pax=list(cex.axis = 1 ))
+
+# plot information retention of the scaled map
+x11();terra::plot(mdgp_raster[[2]],col=gray.colors(20,start=0.1,end=1),mar=c(1.5,1.5,1.7,8),
+            main=paste0('Information Retention for ',prts,' parts'),cex.main = 1.2,
+            plg=list( title = "IR %",title.cex = 1, cex = 1),
+            pax=list(cex.axis = 1 ))
+# -----------------------------------------------
+# print the class-specific and landscape scale summary statistics 
+mdgp_raster[[3]]
+
+# write scaled results to .tif
+terra::writeRaster(mdgp_raster[[1]],file=paste0('./',prfx,'prts',prts,'_rpr',rpr_th,'_mono',mono_th,'_class.tif'))
+```
+
+**Questions**
+
+**How does precision (parts) affect number of scaled classes and mean IR? ?**
+**How does representativeness threshold affect number of scaled classes and mean IR?**
+**How does information retention threshold affect number of scaled classes, class-specific and mean IR?**
+```{r, questions-4-3-response, exercise=TRUE}
+print('Answers: ')
+```
+
+----
+
+## Exercise 2: Detection of Scaled Classes from Landsat Data
+
+In the last exercise we will test the detection accuracy of the scaled classes from Landsat multispectral data. The data set we are using is a Landsat 5 scene from 2011-11-10. The image was subset to the study area that was mapped from the 2010 and 2013 WorldView bi-season data.
+
+In our previous scaling exercise (Exercise 1) the Landsat grid was used in the scaling procedure and the Landsat pixels are aligned with the scaling results. 
+
+Processing and Analysis Steps:
+(1) extract signatures for all classes for centroids of the scaled map
+(2) use random forest classifier to evaluate the detectability of the classes from the spectral signatures
+(3) predict the scaled classes from spectral data for the entire study area
+
+Accuracy Assessment
+(1) model-based cross-validation accuracy
+(2) partial-credit weighted accuracy
+
+----
+
+Explore the spectral data: We will load the subset Landsat scene and plot 2 band combinations
+
+```{r, ls-inspect, exercise=TRUE, eval=FALSE, fig.show='hide'}
+# load spectral Landsat data
+ls <- terra::rast('./data/L5TM_20111110_atmcor_sub.tif')
+
+# plot RGB of band combination 5,4,3.
+x11();terra::plotRGB(ls, 5, 4, 3, stretch="hist")
+```
+
+---
+
+Evaluate the detectability of the scaled classes from .
+
+The next block of code will:
+
+- load the scaled map with mixed class labels
+- convert the map to points
+- extract spectral signatures for each 30 m grid cell from the Landsat stack
+- evaluate the class separability using cross-validated random forest models
+- calculate the partial-credit weighted accuracy
+
+The parameters that need to be set for the random forest classifier training
+
+```{r, sig-eval, exercise=TRUE, eval=FALSE, fig.show='hide'}
+# set working directory
+wd <- ''
+
+# Landsat image
+ls_nme <- './data/L5TM_20111110_atmcor_sub.tif'
+
+# scaled map name to evaluate
+map_nme <- './data/pc5_sf15_prts1_rpr0_mono100_class.tif'
+
+## set random forest parameters
+# number of trees
+nTree <- 200
+
+# training control
+trCtrl <- caret::trainControl(
+		method = 'cv',
+		number = 5,
+		classProbs= TRUE,
+		allowParallel = TRUE,
+		verbose = TRUE,
+		savePredictions = TRUE)
+
+# variable retention sizes
+gridTune <- expand.grid(mtry = c(2:4))
+nrow(gridTune)
+
+# ========== DO NOT MODIFY BEYOND THIS LINE ==========
+
+# load sourced function
+source('./functions/partial_credit_weighted_accuracy.R')
+
+# load spectral Landsat data
+spc.rst <- terra::rast(ls_nme)
+
+# load scaled map and convert to vector
+map_class <- terra::rast(map_nme)
+map.pnt <- terra::as.points(map_class, na.rm=TRUE)
+
+# extract signature and join to class info
+trnDat <- as.data.frame(terra::extract(spc.rst, map.pnt, bind=TRUE))
+head(trnDat)
+# -----------------------------------------------
+
+# set working directory
+setwd(wd)
+
+# -----------------------------------------------
+
+# CROSS-VALIDATED RANDOM FOREST MODEL
+
+mdlFit <- caret::train(trnDat[,2:7],as.character(trnDat$class_name),trControl = trCtrl, metric='Accuracy', method='rf', tuneGrid=gridTune, ntree=nTree, importance=TRUE)
+print(mdlFit)
+# -----------------------------------------------
+
+# MODEL-BASED CROSS-VALIDATED ACCURACY ESTIMATES
+
+# evaluate confusion matrix and write to file
+mtxCnf.cv <- confusionMatrix(prdCV$pred,prdCV$obs)
+
+# write class-specific evaluation and confusion matrix to file
+write.table(mtxCnf.cv$byClass,paste0('./',prfx,'_mtxCnf_stats.csv'))
+write.table(mtxCnf.cv$table,paste0('./',prfx,'_mtxCnf.csv'))
+# -----------------------------------------------
+
+# MODEL-BASED CROSS-VALIDATED PARTIAL-CREDIT WEIGHTED ACCURACY ESTIMATES
+
+# uses the class-label agreement as weights for partial credit
+# sourced functions: partial_credit_weighted_accuracy.R in /functions folder
+
+# read cross-validated confusion matrix
+mtxCnf <- mtxCnf.cv$table
+
+# vectorize the weighting function
+prtlCrdtWghts_V <- Vectorize(prtlCrdtWghts,vectorize.args = c('r_nme','c_nme'))
+
+# generate weight matrix
+mtxCnf_wght <- outer(rownames(mtxCnf),colnames(mtxCnf), prtlCrdtWghts_V)
+
+# weight adjusted accuracy
+wghtAcc <- wghtAdjAcc(cm=mtxCnf,wm=mtxCnf_wght)
+
+# calculate weighted accuracies and confidence intervals
+oaCV_wght <-  round(wghtAcc$sum.naive, 4)
+ciAlpha <- ci(wghtAcc$sum.var, wghtAcc$sum.n,.05)
+oaCV_wght_CIL <- round((wghtAcc$sum.naive-ciAlpha),4)
+oaCV_wght_CIU <- round((wghtAcc$sum.naive+ciAlpha),4)
+```
+Run the spectral evaluation
+
+```{r, spec-eval, exercise=TRUE, eval=FALSE, fig.show='hide'}
+# set working directory
+setwd('')
+
+# load scaled map and associated information retention layer
+map_scl <- terra::rast('./[SCALED_MAP_NAME].tif')
+
+# load information retention raster and calculate landscape level mean
+map_infRtn <- terra::rast('./[SCALED_MAP_IRC_NAME].tif')
+print(infRtnRL <- cellStats(map_infRtn, 'mean'))
+```
+
+Repeat the exercise for the other scaling results (precision and representativness threshold combinations) 
+
+---
+
+**Questions**
+
+**How did increased precision of class-labels affect the detection accuracy from Landsat data?**
+**How did increased representativeness affect the detection accuracy from Landsat data?**
+**What are the trade-offs?**
+```{r, questions-2-1-response, exercise=TRUE}
+print('Answers: ')
+```
+
+----
+
+## Acknowledgements
+
+This tutorial and the package **landscapeScaling** rely heavily on functions from R packages **terra** [@terra], **sf** [@sf_1, @sf_2] **compositions** [@compositions], and **partitions** [@partitions].
+
+## References {-}
+
+<div id="refs"></div>
+

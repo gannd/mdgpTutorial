@@ -9,7 +9,7 @@ theme: simplex
 highlight: espresso
 progressive: true
 allow_skip: true
-description: "Learn how to use the MDGP-Scaling algorithm of the R package landscapeScaling. The first part of the tutorial introduces theory and a new method to scale categorical raster data, taht considers information retention and representativeness of the scaled classes. The second part of the tutorial evaluates the detection of the scaled classes from remotely sensed data."
+description: "Learn how to use the MDGP-Scaling algorithm of the R package landscapeScaling. The first section of the tutorial introduces the necessity and complexity of categorical data scaling theory. A new method that considers information retention and representativeness of the scaled classes when scaling categorical raster data is introduced. Several exercises demonstrate the theoratical concepts"
 bibliography: references.bib
 csl: https://raw.githubusercontent.com/citation-style-language/styles/master/research-institute-for-nature-and-forest.csl
 ---
@@ -472,7 +472,7 @@ Scaling the same landscape with **scale factor 15** and the same precision level
 
 Objective: Compare the effects of scale factor on information retention.
 
-We will first generate the landscape that will then be scaled with scale factors 3 and 5. The scling result will then be converted to rasters of scaled classes and their associated cell-level $IR_{c}$.
+We will first generate the landscape that will then be scaled with scale factors 3 and 5. The scaling result will then be converted to rasters of scaled classes and their associated cell-level $IR_{c}$.
 
 ----
 

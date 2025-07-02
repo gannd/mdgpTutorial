@@ -9,7 +9,7 @@ theme: simplex
 highlight: espresso`
 progressive: true
 allow_skip: true
-description: "The first part of the tutorial introduced theory and a new method to scale categorical raster data, that considers information retention and representativeness of the scaled classes. The second part of the tutorial evaluates the detection of the scaled classes from remotely sensed data."
+description: "The first part of the tutorial introduced theory and a new method to scale categorical raster data, that considers information retention and representativeness of the scaled classes. This second part of the tutorial evaluates the detection of the scaled classes from remotely sensed data. Scaling of a real wetland landscape and the detection of scaled classes from Landsat data are the exercises of this tutorial"
 bibliography: references.bib
 csl: https://raw.githubusercontent.com/citation-style-language/styles/master/research-institute-for-nature-and-forest.csl
 ---
@@ -261,7 +261,7 @@ x11();terra::plotRGB(ls, 5, 4, 3, stretch="hist")
 
 ---
 
-Evaluate the detectability of the scaled classes from .
+Evaluate the detectability of the scaled classes from Landsat using Random forest classifier.
 
 The next block of code will:
 

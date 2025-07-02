@@ -48,7 +48,7 @@ if(!'NLMR' %in% packages_installed){
   remotes::install_github("ropensci/NLMR")
 }
 # install latest updates of landscapeScaling version
-devtools::install_github("gannd/landscapeScaling", force=TRUE)
+remotes::install_github("gannd/landscapeScaling", force=TRUE)
 
 print('All required packages were installed')
 
@@ -67,7 +67,7 @@ The package {landscapeScaling} provides the methods and functions to upscale cat
 
 The scaling procedure creates scaled categorical raster maps with mixed classes, a corresponding continuous raster with compositional information retention calculations for each scaled grid cell, class-specific and landscape-level mean and standard deviation of information retention.The functions for MDGP-Scaling can be divided into two types of functions. The low-level functions follow a step-wise procedure of the scaling process. The high-level function 'mdgp_scale_raster' nests several functions to produce a scaled product from the raw categorical raster input. We will explore first the step-wise procedure before using the nested functions.
 
-The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with devtools (devtools::install_github("gannd/landscapeScaling") during the installation of this tutorial.
+The current version of {landscapeScaling} was installed from [GitHub](https://github.com/) with remotes (remotes::install_github("gannd/landscapeScaling") during the installation of this tutorial.
 
 ### Verify Working Directory
 ```{r, wd-verify, exercise=TRUE, eval=FALSE}
@@ -211,7 +211,7 @@ Start with the default parameter settings, executing the code by clicking hte Ru
 
 # landscape characteristics
 n <- 10   # number of rows and columns: 1 more than cells per row and column!
-c <- 5   # number of classes: 2 more than classes ; first break point 0 and last break point 1 are not included
+c <- 4   # number of classes: 1 more than classes ; first break point 0 and last break point 1 are not included
 r <- 0.04   # roughness
 
 # scaling parameters
@@ -224,13 +224,14 @@ nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
 # classify the midpoint-displacement generated grid into x categorical classes
 nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
+nlm_cat[is.na(nlm_cat)] <- 0
 
 # assign class names to the three raster values 
-levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c])) 
+levels(nlm_cat) <- data.frame(value=c(0:(c-2)),lc=c(LETTERS[1:(c-1)])) 
 # -----------------------------------------------
 # plot the categorized landscape
 x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
-            main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
+            main=paste0((n-1)^2,' Cell Landscape of ',c-1,' Classes and Roughness ',r),
             cex.main = 1.2,
             plg=list(title = 'Class Names',
             title.cex = 1, cex = 1),
@@ -287,9 +288,10 @@ nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
 # classify the midpoint-displacement generated grid into x categorical classes
 nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
+nlm_cat[is.na(nlm_cat)] <- 0
 
 # assign class names to the three raster values 
-levels(nlm_cat) <- data.frame(value=c(1:(c-2)),lc=c(LETTERS[1:(c-2)])) 
+levels(nlm_cat) <- data.frame(value=c(0:(c-2)),lc=c(LETTERS[1:(c-1)]))
 
 # calculate class proportions
 class_dist <- terra::freq(nlm_cat)
@@ -483,7 +485,7 @@ setwd('')
 # landscape characteristics
 n <-    # number of rows and columns
 r <-    # roughness
-c <-    # number of classes - remeber to add 2 more for 0 and 1 
+c <-    # number of classes - remember to add 1 more
 
 # ========== DO NOT MODIFY BEYOND THIS LINE ==========
 
@@ -492,9 +494,10 @@ nlm <- terra::rast(NLMR::nlm_mpd(ncol = n, nrow = n, roughness = r))
 
 # classify the midpoint-displacement generated grid into x categorical classes
 nlm_cat <- terra::classify(nlm, rcl=BAMMtools::getJenksBreaks(terra::values(nlm), c))    
+nlm_cat[is.na(nlm_cat)] <- 0
 
 # assign class names to the three raster values 
-levels(nlm_cat) <- data.frame(value=c(1:c),lc=c(LETTERS[1:c])) 
+levels(nlm_cat) <- data.frame(value=c(0:(c-2)),lc=c(LETTERS[1:(c-1)])) 
 
 # calculate class proportions
 class_dist <- terra::freq(nlm_cat)
@@ -506,10 +509,6 @@ x11();terra::plot(nlm_cat,col=col12,mar=c(1.5,1.5,1.5,8),
                   main=paste0((n-1)^2,' Cell Landscape of ',c-2,' Classes and Roughness ',r),
                   cex.main = 1.2,
                   plg=list(title = 'Class Names',title.cex = 1, cex = 1),pax=list(cex.axis = 1 ))
-
-# generate a grid for scale factor and plot
-g.sf  <- sf::st_make_grid(nlm_cat, square=TRUE, cellsize = floor((n-1)/sf))
-terra::plot(g.sf,add=T,col='transparent',border='black',lwd=2)
 
 print('ADD THE PROPORTION VALUES IN THE CORRESPONDING VECTOR IN THE NEXT CHUNK BEOFRE RUNNING THE NEXT ITERATION!')
 
